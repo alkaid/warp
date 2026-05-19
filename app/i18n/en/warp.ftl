@@ -164,6 +164,7 @@ workspace-toast-conversation-deleted = Conversation deleted
 workspace-search-repos-placeholder = Search repos
 workspace-search-tabs-placeholder = Search tabs...
 terminal-onekey-search-placeholder = Search saved SSH credentials...
+terminal-onekey-search-no-results = No matching SSH credentials
 workspace-rearrange-toolbar-items = Re-arrange toolbar items
 workspace-new-session-agent = Agent
 workspace-new-session-terminal = Terminal

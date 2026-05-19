@@ -656,7 +656,7 @@ const P10K_UPDATE_INSTRUCTIONS_URL: &str =
     "https://github.com/romkatv/powerlevel10k#how-do-i-update-powerlevel10k";
 
 const CONTEXT_MENU_WIDTH: f32 = 280.;
-const ONEKEY_CONTEXT_MENU_WIDTH: f32 = 320.;
+const ONEKEY_CONTEXT_MENU_WIDTH: f32 = 380.;
 const ONEKEY_PROMPT_THROTTLE: Duration = Duration::from_secs(2);
 const ONEKEY_PROMPT_SLIDING_WINDOW_BYTES: usize = 8 * 1024;
 const ONEKEY_PROMPT_BUFFER_HARD_LIMIT: usize = 16 * 1024;
@@ -15548,17 +15548,27 @@ impl TerminalView {
                 .collect();
             // score 大者靠前;同分按原始顺序(stable sort)。
             scored.sort_by(|a, b| b.0.cmp(&a.0));
-            for (_, index) in scored {
-                let candidate = &self.onekey_prompt_candidates[index];
+            if scored.is_empty() {
+                // 命中为空:加一条 disabled 提示行,避免菜单只剩搜索框
+                // 显得很怪;disabled 会被 select_next/previous 自动跳过。
                 items.push(
-                    MenuItemFields::new_with_stacked_label(
-                        candidate.label.clone(),
-                        candidate.subtitle.clone(),
-                    )
-                    .with_icon(icons::Icon::Key)
-                    .with_on_select_action(TerminalAction::OneKeyFillSecret { index })
-                    .into_item(),
+                    MenuItemFields::new(crate::t!("terminal-onekey-search-no-results"))
+                        .with_disabled(true)
+                        .into_item(),
                 );
+            } else {
+                for (_, index) in scored {
+                    let candidate = &self.onekey_prompt_candidates[index];
+                    items.push(
+                        MenuItemFields::new_with_stacked_label(
+                            candidate.label.clone(),
+                            candidate.subtitle.clone(),
+                        )
+                        .with_icon(icons::Icon::Key)
+                        .with_on_select_action(TerminalAction::OneKeyFillSecret { index })
+                        .into_item(),
+                    );
+                }
             }
         }
 
