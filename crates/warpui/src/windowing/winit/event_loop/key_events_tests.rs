@@ -86,6 +86,32 @@ fn text_fallback_maps_enter_to_key_down() {
 }
 
 #[test]
+fn text_fallback_preserves_control_key_chars() {
+    for (input, expected_key) in [
+        ("\u{8}", "backspace"),
+        ("\u{7f}", "delete"),
+        ("\u{1b}", "escape"),
+    ] {
+        let event = text_fallback_event_for_unconverted_key(
+            Some(input.to_string()),
+            ElementState::Pressed,
+            ModifiersState::empty(),
+            false,
+        );
+
+        match event.expect("control key should produce a key event") {
+            crate::Event::KeyDown {
+                keystroke, chars, ..
+            } => {
+                assert_eq!(expected_key, keystroke.key);
+                assert_eq!(input, chars);
+            }
+            unexpected => panic!("expected key down, got {unexpected:?}"),
+        }
+    }
+}
+
+#[test]
 fn text_fallback_ignores_shortcuts() {
     let event = text_fallback_event_for_unconverted_key(
         Some("v".to_string()),

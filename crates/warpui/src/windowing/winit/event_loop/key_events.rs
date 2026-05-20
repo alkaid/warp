@@ -174,9 +174,9 @@ fn key_down_for_control_text(chars: &str) -> Option<(&'static str, &'static str)
         "\r" => Some(("enter", "\r")),
         "\n" => Some(("enter", "\n")),
         "\t" => Some(("tab", "\t")),
-        "\u{8}" => Some(("backspace", "")),
-        "\u{7f}" => Some(("delete", "")),
-        "\u{1b}" => Some(("escape", "")),
+        "\u{8}" => Some(("backspace", "\u{8}")),
+        "\u{7f}" => Some(("delete", "\u{7f}")),
+        "\u{1b}" => Some(("escape", "\u{1b}")),
         _ => None,
     }
 }
