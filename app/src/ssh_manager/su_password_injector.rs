@@ -1,5 +1,6 @@
 //! su 密码确认提示。持续监听 PTY 输出,当检测到用户输入 `su root` / `su - root`
-//! 等切换到 root 的命令后出现密码提示时,弹出确认菜单,用户确认后注入 root 密码。
+//! 等切换到 root 的命令后出现密码提示时,弹出确认菜单,用户确认后注入 root 密码
+//! 或共享 OneKey 密码。
 //!
 //! 仅为 root 目标注入,`su lg` 等切换到其他用户不触发。
 //! 先等待 shell prompt 出现(表示 SSH 登录已完成)再开始检测,避免与登录密码冲突。
@@ -50,7 +51,7 @@ lazy_static! {
 pub fn spawn_su_password_injector<O>(
     pty_reads_rx: Option<InactiveReceiver<Arc<Vec<u8>>>>,
     terminal_view: WeakViewHandle<TerminalView>,
-    root_password: Zeroizing<String>,
+    root_password: Option<Zeroizing<String>>,
     ctx: &mut ViewContext<O>,
 ) where
     O: warpui::View + 'static,
@@ -59,11 +60,6 @@ pub fn spawn_su_password_injector<O>(
         log::debug!("ssh su password injector: no pty_reads_rx — skip");
         return;
     };
-    if root_password.is_empty() {
-        log::debug!("ssh su password injector: empty root password — skip");
-        return;
-    }
-
     // 设置 in-flight 标志,阻止 OneKey 凭据选择框在等待 shell prompt 期间弹出。
     if let Some(view) = terminal_view.upgrade(ctx) {
         view.update(ctx, |view, _| {
@@ -118,7 +114,7 @@ pub fn spawn_su_password_injector<O>(
                 return;
             };
             view.update(ctx, |view, ctx| {
-                view.su_root_password = Some(root_password.clone());
+                view.su_root_password = root_password.clone();
                 view.show_su_root_confirm_menu(ctx);
                 view.set_ssh_secret_auto_injection_in_flight(false);
             });
