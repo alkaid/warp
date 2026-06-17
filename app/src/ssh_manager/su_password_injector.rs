@@ -60,6 +60,10 @@ pub fn spawn_su_password_injector<O>(
         log::debug!("ssh su password injector: no pty_reads_rx — skip");
         return;
     };
+    let Some(root_password) = root_password.filter(|password| !password.is_empty()) else {
+        log::debug!("ssh su password injector: empty root password - skip");
+        return;
+    };
     // 设置 in-flight 标志,阻止 OneKey 凭据选择框在等待 shell prompt 期间弹出。
     if let Some(view) = terminal_view.upgrade(ctx) {
         view.update(ctx, |view, _| {
@@ -114,7 +118,7 @@ pub fn spawn_su_password_injector<O>(
                 return;
             };
             view.update(ctx, |view, ctx| {
-                view.su_root_password = root_password.clone();
+                view.su_root_password = Some(root_password.clone());
                 view.show_su_root_confirm_menu(ctx);
                 view.set_ssh_secret_auto_injection_in_flight(false);
             });
@@ -132,6 +136,10 @@ pub fn spawn_su_password_injector<O>(
 /// 检查缓冲区中是否包含目标为 root 的 su 命令。
 fn is_su_to_root(buf: &[u8]) -> bool {
     SU_ROOT_CMD_REGEX.is_match(buf)
+}
+
+pub(crate) fn should_spawn_su_password_injector(root_password: Option<&Zeroizing<String>>) -> bool {
+    root_password.is_some_and(|password| !password.is_empty())
 }
 
 #[cfg(test)]

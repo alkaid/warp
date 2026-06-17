@@ -5495,12 +5495,16 @@ impl Workspace {
                 None
             }
         };
-        crate::ssh_manager::su_password_injector::spawn_su_password_injector(
-            terminal_view.read(ctx, |v, c| v.inactive_pty_reads_rx(c)),
-            terminal_view.downgrade(),
-            root_secret,
-            ctx,
-        );
+        if crate::ssh_manager::su_password_injector::should_spawn_su_password_injector(
+            root_secret.as_ref(),
+        ) {
+            crate::ssh_manager::su_password_injector::spawn_su_password_injector(
+                terminal_view.read(ctx, |v, c| v.inactive_pty_reads_rx(c)),
+                terminal_view.downgrade(),
+                root_secret,
+                ctx,
+            );
+        }
 
         // 3. 排队 ssh 命令,等 bootstrap 完成自动 flush。
         terminal_view.update(ctx, |view, ctx| {
