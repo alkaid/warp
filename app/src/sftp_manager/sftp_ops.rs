@@ -11,7 +11,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use warp_ssh_manager::SshRepository;
-use warp_ssh_manager::secrets::{SecretKind, SshSecretStore};
+use warp_ssh_manager::secrets::SshSecretStore;
 use warp_ssh_manager::types::{AuthType, ResolvedSshAuth, SshServerInfo};
 use zap_sftp::Sftp;
 use zap_sftp::session::{AuthMethod, SftpSession};
@@ -469,7 +469,7 @@ fn build_auth_method(
     resolved_auth: &ResolvedSshAuth,
     secret_store: &dyn SshSecretStore,
 ) -> Result<AuthMethod, SftpOpsError> {
-    match server.auth_type {
+    match resolved_auth.auth_type {
         AuthType::Password | AuthType::OneKey => {
             let password = secret_store
                 .get(&resolved_auth.secret_lookup_id, resolved_auth.secret_kind)
@@ -482,12 +482,12 @@ fn build_auth_method(
             })
         }
         AuthType::Key => {
-            let key_path = server.key_path.as_ref().ok_or_else(|| {
+            let key_path = resolved_auth.key_path.as_ref().ok_or_else(|| {
                 SftpOpsError::NoCredentials("密钥认证但未指定密钥路径".to_string())
             })?;
             let expanded = shellexpand_path(key_path);
             let passphrase = secret_store
-                .get(&server.node_id, SecretKind::Passphrase)
+                .get(&resolved_auth.secret_lookup_id, resolved_auth.secret_kind)
                 .ok()
                 .flatten()
                 .map(|p| p.to_string());
